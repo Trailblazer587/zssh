@@ -162,62 +162,19 @@ func dosz(ptmx *os.File, start []byte, c *copyStdin) {
 }
 
 func selectFile() (string, error) {
-	line := liner.NewLiner()
-	defer line.Close()
-	line.SetCompleter(func(line string) (c []string) {
-		if len(line) > 0 && line[len(line)-1] != '/' {
-			if info, err := os.Stat(line); err == nil {
-				if info.IsDir() {
-					line += "/"
-				}
-			}
-		}
-		dir, file := path.Split(line)
-		if dir == "" {
-			dir = "."
-		}
-		fs, err := ioutil.ReadDir(dir)
-		if err != nil {
-			return
-		}
-		for _, e := range fs {
-			name := e.Name()
-			if strings.HasPrefix(name, file) {
-				c = append(c, filepath.Join(dir, name))
-			}
-		}
-		return
-	})
-	name, err := line.Prompt("select a file to send: ")
-	return name, err
+	cmd := exec.Command("powershell.exe",
+		`Add-Type -AssemblyName PresentationFramework;$f=New-Object Microsoft.Win32.`+
+			`OpenFileDialog;if($f.ShowDialog()){wsl wslpath $f.FileName.Replace("\", "\\")}`)
+	res, err := cmd.Output()
+	return strings.TrimSpace(string(res)), err
 }
 
 func selectDir() (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	line := liner.NewLiner()
-	defer line.Close()
-	line.SetCompleter(func(line string) (c []string) {
-		dir, file := path.Split(line)
-		if dir == "" {
-			dir = "."
-		}
-		fs, err := ioutil.ReadDir(dir)
-		if err != nil {
-			return
-		}
-		for _, e := range fs {
-			name := e.Name()
-			if strings.HasPrefix(name, file) && e.IsDir() {
-				c = append(c, filepath.Join(dir, name)+"/")
-			}
-		}
-		return
-	})
-	name, err := line.PromptWithSuggestion("select directory to recive file: ", cwd, -1)
-	return name, err
+	cmd := exec.Command("powershell.exe",
+		`Add-Type -AssemblyName System.windows.forms;$f=New-Object System.Windows.Forms.`+
+			`FolderBrowserDialog;if($f.ShowDialog()){wsl wslpath $f.SelectedPath.Replace("\", "\\")}`)
+	res, err := cmd.Output()
+	return strings.TrimSpace(string(res)), err
 }
 
 type fWithStart struct {
