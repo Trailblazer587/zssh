@@ -62,7 +62,7 @@ func main() {
 			time.Sleep(time.Duration(interval) * time.Second)
 			if !aliveflag {
 				//syscall.Kill(0, syscall.SIGWINCH)
-				ptmx.Write([]byte{0x1b, 0x1b}) // send ESC ESC
+				ptmx.Write([]byte{0x07}) // send BEL
 			}
 			aliveflag = false
 		}
