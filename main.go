@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/creack/pty"
-	"github.com/peterh/liner"
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 )
@@ -159,17 +158,29 @@ func dosz(ptmx *os.File, start []byte, c *copyStdin) {
 }
 
 func selectFile() (string, error) {
-	cmd := exec.Command("powershell.exe",
-		`Add-Type -AssemblyName PresentationFramework;$f=New-Object Microsoft.Win32.`+
-			`OpenFileDialog;if($f.ShowDialog()){wsl wslpath $f.FileName.Replace("\", "\\")}`)
+	cmd := exec.Command("powershell.exe", `
+		Add-Type -AssemblyName PresentationFramework;
+		$f=New-Object Microsoft.Win32.OpenFileDialog;
+		if($f.ShowDialog()){
+			wsl wslpath $f.FileName.Replace("\", "\\")
+		} else {
+			throw "no file selected"
+		}
+	`)
 	res, err := cmd.Output()
 	return strings.TrimSpace(string(res)), err
 }
 
 func selectDir() (string, error) {
-	cmd := exec.Command("powershell.exe",
-		`Add-Type -AssemblyName System.windows.forms;$f=New-Object System.Windows.Forms.`+
-			`FolderBrowserDialog;if($f.ShowDialog()){wsl wslpath $f.SelectedPath.Replace("\", "\\")}`)
+	cmd := exec.Command("powershell.exe", `
+		Add-Type -AssemblyName System.windows.forms;
+		$f=New-Object System.Windows.Forms.FolderBrowserDialog;
+		if($f.ShowDialog() -eq "OK"){
+			wsl wslpath $f.SelectedPath.Replace("\", "\\")
+		} else {
+			throw "no dir selected"
+		}
+	`)
 	res, err := cmd.Output()
 	return strings.TrimSpace(string(res)), err
 }
